@@ -1,0 +1,61 @@
+{
+  "name": "homebridge-ecoflow-delta-ultra-pro",
+  "displayName": "Homebridge EcoFlow DELTA Pro Ultra",
+  "version": "0.2.0",
+  "description": "A Homebridge plugin for EcoFlow DELTA Pro Ultra devices.",
+  "keywords": [
+    "ecoflow",
+    "ecoflow delta ultra pro",
+    "homebridge",
+    "homebridge-plugin"
+  ],
+  "homepage": "https://github.com/michaelahern/homebridge-ecoflow-delta-ultra-pro",
+  "bugs": {
+    "url": "http://github.com/michaelahern/homebridge-ecoflow-delta-ultra-pro/issues"
+  },
+  "license": "ISC",
+  "author": "Michael Ahern <michael.ahern@gmail.com>",
+  "funding": {
+    "type": "paypal",
+    "url": "https://paypal.me/michaeljahern"
+  },
+  "files": [
+    "config.schema.json",
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/michaelahern/homebridge-ecoflow-delta-ultra-pro.git"
+  },
+  "scripts": {
+    "eslint": "eslint src/**.ts --max-warnings=0",
+    "eslint-fix": "eslint src/**.ts --max-warnings=0 --fix",
+    "lint": "npm run eslint",
+    "lint-fix": "npm run eslint-fix",
+    "fmt": "npm run lint-fix",
+    "build": "npm run clean && tsc",
+    "clean": "rimraf ./dist",
+    "prepublishOnly": "npm run lint && npm run build"
+  },
+  "dependencies": {
+    "@protobuf-ts/plugin": "~2.9.3",
+    "axios": "~1.6.7",
+    "mqtt": "~5.3.6",
+    "uuid": "~9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0",
+    "@types/uuid": "^9.0",
+    "@typescript-eslint/eslint-plugin": "^7.1",
+    "@typescript-eslint/parser": "^7.1",
+    "eslint": "^8.57",
+    "homebridge": "~1.7.0",
+    "rimraf": "^5.0",
+    "typescript": "^5.3"
+  },
+  "engines": {
+    "homebridge": ">=1.6.0",
+    "node": ">=18"
+  }
+}
