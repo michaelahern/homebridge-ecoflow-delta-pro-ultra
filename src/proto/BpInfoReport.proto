@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+message BPInfo
+{
+    optional uint32 bp_no = 1;
+    optional uint32 bp_chg_sta = 2;
+    optional uint32 bp_soc = 3;
+    optional float bp_pwr = 4;
+    optional float bp_energy = 5; 
+    optional uint32 heat_time = 6;
+    optional uint32 remain_time = 7;
+    optional uint32 bp_soc_max = 8;
+    optional uint32 bp_soc_min = 9;
+    optional uint32 bp_err_code = 10;
+    optional int32 bp_temp = 11;
+}
+
+message BpInfoReport
+{
+    repeated BPInfo bp_info = 1;
+}

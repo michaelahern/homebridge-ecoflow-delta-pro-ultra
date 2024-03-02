@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+message AppParaHeartbeatReport
+{
+    optional uint32 sys_word_mode = 1;
+    optional uint32 sys_backup_event = 2;
+    optional uint32 sys_backup_soc = 3;
+    optional uint32 energy_mamage_enable = 4;
+    optional uint32 backup_ratio = 5;
+    optional uint32 ac_xboost = 6;
+    optional uint32 ac_out_freq = 7;
+    optional uint32 bms_mode_set = 8;
+    optional uint32 chg_max_soc = 9;
+    optional uint32 dsg_min_soc = 10;
+    optional uint32 ac_often_open_flg = 11;
+    optional uint32 ac_often_open_min_soc = 12;
+    optional uint32 chg_5p8_set_watts = 13;
+    optional uint32 chg_c20_set_watts = 14;
+    optional uint32 power_standby_mins = 15;
+    optional uint32 screen_standby_sec = 16;
+    optional uint32 dc_standby_mins = 17;
+    optional uint32 ac_standby_mins = 18;
+    optional uint32 solar_only_flg = 19;
+    optional uint32 timezone_settype = 20;
+    optional sint32 sys_timezone = 21;
+    optional string sys_timezone_id = 22;
+}

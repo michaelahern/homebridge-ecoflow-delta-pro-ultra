@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+enum Access5p8InputType
+{
+    IN_IDLE = 0;
+    IN_AC_EV = 1;
+    IN_PD303 = 2;
+    IN_L14_TRANS = 3;
+}
+
+enum Access5p8OutputType
+{
+    OUT_IDLE = 0;
+    OUT_PARALLEL_BOX = 1;
+    OUT_PD303 = 2;
+}
+
+message AppShowHeartbeatReport
+{
+    optional uint32 proto_ver = 1;
+    optional uint32 show_flag = 2;
+    optional uint32 access_type = 3;
+    optional sint32 wireless_4g_on = 10;
+    optional sint32 wireless_4g_sta = 11;
+    optional Access5p8InputType access_5p8_in_type = 12;
+    optional Access5p8OutputType access_5p8_out_type = 13;
+    optional sint32 wireless_4g_con = 14;
+    optional sint32 wirlesss_4g_err_code = 15;
+    optional string sim_iccid = 16;
+    optional uint32 soc = 21;
+    optional uint32 bp_num = 22;
+    optional uint32 pcs_type = 23;
+    optional uint32 c20_chg_max_watts = 24;
+    optional uint32 para_chg_max_watts = 25;
+    optional uint32 remain_time = 26;
+    optional uint32 sys_err_code = 27;
+    optional uint32 full_combo = 28;
+    optional uint32 remain_combo = 29;
+    optional float watts_in_sum = 41;
+    optional float watts_out_sum = 42;
+    optional float out_usb1_pwr = 43;
+    optional float out_usb2_pwr = 44;
+    optional float out_typec1_pwr = 45;
+    optional float out_typec2_pwr = 46;
+    optional float out_ads_pwr = 47;
+    optional float out_ac_l1_1_pwr = 48;
+    optional float out_ac_l1_2_pwr = 49;
+    optional float out_ac_l2_1_pwr = 50;
+    optional float out_ac_l2_2_pwr = 51;
+    optional float out_ac_tt_pwr = 52;
+    optional float out_ac_l14_pwr = 53;
+    optional float out_ac_5p8_pwr = 54;
+    optional float in_ac_5p8_pwr = 55;
+    optional float in_ac_c20_pwr = 56;
+    optional float in_lv_mppt_pwr = 57;
+    optional float in_hv_mppt_pwr = 58;
+    optional float out_pr_pwr = 59;
+    optional uint32 time_task_change_cnt = 100;
+    optional uint32 time_task_conflict_flag = 101;
+    optional uint32 chg_time_task_notice = 102;
+    optional uint32 chg_time_task_type = 103;
+    optional uint32 chg_time_task_index = 104;
+    optional uint32 chg_time_task_mode = 105;
+    optional uint32 chg_time_task_param = 106;
+    optional uint32 chg_time_task_table_0 = 107;
+    optional uint32 chg_time_task_table_1 = 108;
+    optional uint32 chg_time_task_table_2 = 109;
+    optional uint32 dsg_time_task_notice = 121;
+    optional uint32 dsg_time_task_type = 122;
+    optional uint32 dsg_time_task_index = 123;
+    optional uint32 dsg_time_task_mode = 124;
+    optional uint32 dsg_time_task_param = 125;
+    optional uint32 dsg_time_task_table_0 = 126;
+    optional uint32 dsg_time_task_table_1 = 127;
+    optional uint32 dsg_time_task_table_2 = 128;
+}
