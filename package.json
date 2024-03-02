@@ -1,17 +1,17 @@
 {
-  "name": "homebridge-ecoflow-delta-ultra-pro",
+  "name": "homebridge-ecoflow-delta-pro-ultra",
   "displayName": "Homebridge EcoFlow DELTA Pro Ultra",
   "version": "0.1.0",
   "description": "A Homebridge plugin for EcoFlow DELTA Pro Ultra devices.",
   "keywords": [
     "ecoflow",
-    "ecoflow delta ultra pro",
+    "ecoflow delta pro ultra",
     "homebridge",
     "homebridge-plugin"
   ],
-  "homepage": "https://github.com/michaelahern/homebridge-ecoflow-delta-ultra-pro",
+  "homepage": "https://github.com/michaelahern/homebridge-ecoflow-delta-pro-ultra",
   "bugs": {
-    "url": "http://github.com/michaelahern/homebridge-ecoflow-delta-ultra-pro/issues"
+    "url": "http://github.com/michaelahern/homebridge-ecoflow-delta-pro-ultra/issues"
   },
   "license": "ISC",
   "author": "Michael Ahern <michael.ahern@gmail.com>",
@@ -26,7 +26,7 @@
   "main": "dist/index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/michaelahern/homebridge-ecoflow-delta-ultra-pro.git"
+    "url": "git://github.com/michaelahern/homebridge-ecoflow-delta-pro-ultra.git"
   },
   "scripts": {
     "eslint": "eslint src/**.ts --max-warnings=0",
