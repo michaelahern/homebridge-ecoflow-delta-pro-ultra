@@ -1,16 +1,15 @@
-import { AccessoryConfig, AccessoryPlugin, API, Characteristic, CharacteristicValue, Formats, Logging, Perms, Service } from "homebridge";
+import { AccessoryConfig, AccessoryPlugin, API, Logging, Service } from "homebridge";
 
 import { EcoflowApi } from "./api";
-
-import { AppParaHeartbeatReport } from "./proto/AppParaHeartbeatReport";
+import { EcoFlowCustomCharacteristics } from "./homebridge";
 import { AppShowHeartbeatReport } from "./proto/AppShowHeartbeatReport";
 import { BackendRecordHeartbeatReport } from "./proto/BackendRecordHeartbeatReport";
-import { BpInfoReport } from "./proto/BpInfoReport";
 import { HeaderMessage } from "./proto/HeaderMessage";
 
 export class EcoflowPlugin implements AccessoryPlugin {
     private readonly api: API;
     private readonly log: Logging;
+    private readonly customCharacteristics: EcoFlowCustomCharacteristics;
 
     private readonly informationService: Service;
     private readonly batteryService: Service;
@@ -18,10 +17,13 @@ export class EcoflowPlugin implements AccessoryPlugin {
     private readonly outletAcL12: Service;
     private readonly outletAcL21: Service;
     private readonly outletAcL22: Service;
+    private readonly outletAcTt: Service;
+    private readonly outletAcL14: Service;
 
     constructor(log: Logging, config: EcoflowPluginConfig, api: API) {
         this.api = api;    
         this.log = log;
+        this.customCharacteristics = new EcoFlowCustomCharacteristics(api);
 
         if (!config.email) {
             this.log.error("Missing required config value: email");
@@ -49,41 +51,59 @@ export class EcoflowPlugin implements AccessoryPlugin {
         this.batteryService = new api.hap.Service.Battery("Battery");
 
         // Outlet Services
-        // AC 120V 20A Backup 1/2 | AC 120V 20A Online UPS | AC 120V 30A | AC 120V/240V 30A
+        // AC 20A Backup UPS 1/2 | AC 20A Online UPS 1/2 | AC 120V 30A | AC 120V/240V 30A | Power In/Out
 
-        // AC 120V 20A Backup UPS 1
-        this.outletAcL11 = new api.hap.Service.Outlet("AC Backup UPS 1", "outletAcL11Pwr");
-        this.outletAcL11.addCharacteristic(this.newWattCharacteristic());
-        this.outletAcL11.addCharacteristic(this.newAmpCharacteristic());
-        this.outletAcL11.addCharacteristic(this.newVoltCharacteristic());
+        // AC 20A Backup UPS 1
+        this.outletAcL11 = new api.hap.Service.Outlet("AC 20A (Backup UPS 1)", "outletAcL11");
+        this.outletAcL11.addCharacteristic(this.customCharacteristics.Amps());
+        this.outletAcL11.addCharacteristic(this.customCharacteristics.Volts());
+        this.outletAcL11.addCharacteristic(this.customCharacteristics.Watts());
         this.outletAcL11.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
             throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
         
-        // AC 120V 20A Backup UPS 2
-        this.outletAcL12 = new api.hap.Service.Outlet("AC Backup UPS 2", "outletAcL12Pwr");
-        this.outletAcL12.addCharacteristic(this.newWattCharacteristic());
-        this.outletAcL12.addCharacteristic(this.newAmpCharacteristic());
-        this.outletAcL12.addCharacteristic(this.newVoltCharacteristic());
+        // AC 20A Backup UPS 2
+        this.outletAcL12 = new api.hap.Service.Outlet("AC 20A (Backup UPS 2)", "outletAcL12");
+        this.outletAcL12.addCharacteristic(this.customCharacteristics.Amps());
+        this.outletAcL12.addCharacteristic(this.customCharacteristics.Volts());
+        this.outletAcL12.addCharacteristic(this.customCharacteristics.Watts());
         this.outletAcL12.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
             throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
 
-        // AC 120V 20A Online UPS 1
-        this.outletAcL21 = new api.hap.Service.Outlet("AC Online UPS 1", "outletAcL21Pwr");
-        this.outletAcL21.addCharacteristic(this.newWattCharacteristic());
-        this.outletAcL21.addCharacteristic(this.newAmpCharacteristic());
-        this.outletAcL21.addCharacteristic(this.newVoltCharacteristic());
+        // AC 20A Online UPS 1
+        this.outletAcL21 = new api.hap.Service.Outlet("AC 20A (Online UPS 1)", "outletAcL21");
+        this.outletAcL21.addCharacteristic(this.customCharacteristics.Amps());
+        this.outletAcL21.addCharacteristic(this.customCharacteristics.Volts());
+        this.outletAcL21.addCharacteristic(this.customCharacteristics.Watts());
         this.outletAcL21.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
             throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
         
-        // AC 120V 20A Online UPS 2
-        this.outletAcL22 = new api.hap.Service.Outlet("AC Online UPS 2", "outletAcL22Pwr");
-        this.outletAcL22.addCharacteristic(this.newWattCharacteristic());
-        this.outletAcL22.addCharacteristic(this.newAmpCharacteristic());
-        this.outletAcL22.addCharacteristic(this.newVoltCharacteristic());
+        // AC 20A Online UPS 2
+        this.outletAcL22 = new api.hap.Service.Outlet("AC 20A (Online UPS 2)", "outletAcL22");
+        this.outletAcL22.addCharacteristic(this.customCharacteristics.Amps());
+        this.outletAcL22.addCharacteristic(this.customCharacteristics.Volts());
+        this.outletAcL22.addCharacteristic(this.customCharacteristics.Watts());
         this.outletAcL22.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
+            throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
+        });
+
+        // AC 30A 120V
+        this.outletAcTt = new api.hap.Service.Outlet("AC 30A 120V", "outletAcTt");
+        this.outletAcTt.addCharacteristic(this.customCharacteristics.Amps());
+        this.outletAcTt.addCharacteristic(this.customCharacteristics.Volts());
+        this.outletAcTt.addCharacteristic(this.customCharacteristics.Watts());
+        this.outletAcTt.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
+            throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
+        });
+
+        // AC 30A 120V/240V
+        this.outletAcL14 = new api.hap.Service.Outlet("AC 30A 240V", "outletAcL14");
+        this.outletAcL14.addCharacteristic(this.customCharacteristics.Amps());
+        this.outletAcL14.addCharacteristic(this.customCharacteristics.Volts());
+        this.outletAcL14.addCharacteristic(this.customCharacteristics.Watts());
+        this.outletAcL14.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
             throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
 
@@ -101,7 +121,7 @@ export class EcoflowPlugin implements AccessoryPlugin {
     async mqttInit(email: string, password: string, serialNumber: string) {
         const ecoflowApi = new EcoflowApi();
 
-        // try
+        // todo: retry
         const ecoflowMqtt = await ecoflowApi.connectMqttAsync(email, password);
         this.log.info("Connected to Ecoflow MQTT...");
     
@@ -124,9 +144,9 @@ export class EcoflowPlugin implements AccessoryPlugin {
             }
 
             if (headerMessage.msg.src == 2 && headerMessage.msg.cmdFunc == 2) {
-                // try
                 switch (headerMessage.msg.cmdId) {
-                    case 1:
+                    // AppShowHeartbeatReport
+                    case 1: {
                         const appShowHeartbeatReport = AppShowHeartbeatReport.fromBinary(headerMessage.msg.pdata);
                         this.log.debug(`AppShowHeartbeatReport (${serialNumber}) ${JSON.stringify(appShowHeartbeatReport)}`);
 
@@ -140,45 +160,58 @@ export class EcoflowPlugin implements AccessoryPlugin {
                             );
                         }
 
-                        // showFlag 2 == DC
-                        // showFlag 4 == AC
-
+                        // showFlag: 2 == DC, 4 == AC
                         if (appShowHeartbeatReport.showFlag != undefined) {
                             this.log.debug(`showFlag: ${appShowHeartbeatReport.showFlag}`);
-                            this.log.debug(`showFlag & 4: ${appShowHeartbeatReport.showFlag & 4}`);
-
                             this.outletAcL11.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
                             this.outletAcL12.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
                             this.outletAcL21.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
                             this.outletAcL22.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
+                            this.outletAcTt.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
+                            this.outletAcL14.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
                         }
 
                         if (appShowHeartbeatReport.outAcL11Pwr != undefined) {
                             this.log.debug(`outAcL11Pwr: ${appShowHeartbeatReport.outAcL11Pwr}`);
                             this.outletAcL11.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL11Pwr != 0);
-                            this.outletAcL11.getCharacteristic("Watts")?.updateValue(appShowHeartbeatReport.outAcL11Pwr);
+                            this.outletAcL11.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL11Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL12Pwr != undefined) {
                             this.log.debug(`outAcL12Pwr: ${appShowHeartbeatReport.outAcL12Pwr}`);
                             this.outletAcL12.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL12Pwr != 0);
-                            this.outletAcL12.getCharacteristic("Watts")?.updateValue(appShowHeartbeatReport.outAcL12Pwr);
+                            this.outletAcL12.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL12Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL21Pwr != undefined) {
                             this.log.debug(`outAcL21Pwr: ${appShowHeartbeatReport.outAcL11Pwr}`);
                             this.outletAcL21.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL21Pwr != 0);
-                            this.outletAcL21.getCharacteristic("Watts")?.updateValue(appShowHeartbeatReport.outAcL21Pwr);
+                            this.outletAcL21.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL21Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL22Pwr != undefined) {
                             this.log.debug(`outAcL22Pwr: ${appShowHeartbeatReport.outAcL12Pwr}`);
                             this.outletAcL22.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL22Pwr != 0);
-                            this.outletAcL22.getCharacteristic("Watts")?.updateValue(appShowHeartbeatReport.outAcL22Pwr);
+                            this.outletAcL22.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL22Pwr);
+                        }
+
+                        if (appShowHeartbeatReport.outAcTtPwr != undefined) {
+                            this.log.debug(`outAcTtPwr: ${appShowHeartbeatReport.outAcTtPwr}`);
+                            this.outletAcTt.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcTtPwr != 0);
+                            this.outletAcTt.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcTtPwr);
+                        }
+
+                        if (appShowHeartbeatReport.outAcL14Pwr != undefined) {
+                            this.log.debug(`outAcTtPwr: ${appShowHeartbeatReport.outAcTtPwr}`);
+                            this.outletAcL14.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL14Pwr != 0);
+                            this.outletAcL14.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL14Pwr);
                         }
 
                         break;
-                    case 2:
+                    }
+
+                    // BackendRecordHeartbeatReport
+                    case 2: {
                         const backendRecordHeartbeatReport = BackendRecordHeartbeatReport.fromBinary(headerMessage.msg.pdata);
                         this.log.debug(`BackendRecordHeartbeatReport (${serialNumber}) ${JSON.stringify(backendRecordHeartbeatReport)}`);
 
@@ -192,88 +225,81 @@ export class EcoflowPlugin implements AccessoryPlugin {
 
                         if (backendRecordHeartbeatReport.outAcL11Amp != undefined) {
                             this.log.debug(`outAcL11Amp: ${backendRecordHeartbeatReport.outAcL11Amp}`);
-                            this.outletAcL11.getCharacteristic("Amps")?.updateValue(backendRecordHeartbeatReport.outAcL11Amp);
+                            this.outletAcL11.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL11Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL11Vol != undefined) {
                             this.log.debug(`outAcL11Vol: ${backendRecordHeartbeatReport.outAcL11Vol}`);
-                            this.outletAcL11.getCharacteristic("Volts")?.updateValue(backendRecordHeartbeatReport.outAcL11Vol);
+                            this.outletAcL11.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL11Vol);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL12Amp != undefined) {
                             this.log.debug(`outAcL12Amp: ${backendRecordHeartbeatReport.outAcL12Amp}`);
-                            this.outletAcL12.getCharacteristic("Amps")?.updateValue(backendRecordHeartbeatReport.outAcL12Amp);
+                            this.outletAcL12.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL12Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL12Vol != undefined) {
                             this.log.debug(`outAcL12Vol: ${backendRecordHeartbeatReport.outAcL12Vol}`);
-                            this.outletAcL12.getCharacteristic("Volts")?.updateValue(backendRecordHeartbeatReport.outAcL12Vol);
+                            this.outletAcL12.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL12Vol);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL21Amp != undefined) {
                             this.log.debug(`outAcL21Amp: ${backendRecordHeartbeatReport.outAcL21Amp}`);
-                            this.outletAcL21.getCharacteristic("Amps")?.updateValue(backendRecordHeartbeatReport.outAcL21Amp);
+                            this.outletAcL21.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL21Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL21Vol != undefined) {
                             this.log.debug(`outAcL21Vol: ${backendRecordHeartbeatReport.outAcL21Vol}`);
-                            this.outletAcL21.getCharacteristic("Volts")?.updateValue(backendRecordHeartbeatReport.outAcL21Vol);
+                            this.outletAcL21.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL21Vol);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL22Amp != undefined) {
                             this.log.debug(`outAcL22Amp: ${backendRecordHeartbeatReport.outAcL22Amp}`);
-                            this.outletAcL22.getCharacteristic("Amps")?.updateValue(backendRecordHeartbeatReport.outAcL22Amp);
+                            this.outletAcL22.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL22Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL22Vol != undefined) {
                             this.log.debug(`outAcL22Vol: ${backendRecordHeartbeatReport.outAcL22Vol}`);
-                            this.outletAcL22.getCharacteristic("Volts")?.updateValue(backendRecordHeartbeatReport.outAcL22Vol);
+                            this.outletAcL22.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL22Vol);
+                        }
+
+                        if (backendRecordHeartbeatReport.outAcTtAmp != undefined) {
+                            this.log.debug(`outAcTtAmp: ${backendRecordHeartbeatReport.outAcTtAmp}`);
+                            this.outletAcTt.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcTtAmp);
+                        }
+
+                        if (backendRecordHeartbeatReport.outAcTtVol != undefined) {
+                            this.log.debug(`outAcTtVol: ${backendRecordHeartbeatReport.outAcTtVol}`);
+                            this.outletAcTt.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcTtVol);
+                        }
+
+                        if (backendRecordHeartbeatReport.outAcL14Amp != undefined) {
+                            this.log.debug(`outAcL14Amp: ${backendRecordHeartbeatReport.outAcL14Amp}`);
+                            this.outletAcL14.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL14Amp);
+                        }
+
+                        if (backendRecordHeartbeatReport.outAcL14Vol != undefined) {
+                            this.log.debug(`outAcL14Vol: ${backendRecordHeartbeatReport.outAcL14Vol}`);
+                            this.outletAcL14.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL14Vol);
                         }
 
                         break;
-                    case 3:
-                        this.log.debug(`AppParaHeartbeatReport (${serialNumber})`);
-                        const appParaHeartbeatReport = AppParaHeartbeatReport.fromBinary(headerMessage.msg.pdata);
-                        this.log.debug(JSON.stringify(appParaHeartbeatReport));
+                    }
+                    // AppParaHeartbeatReport
+                    case 3: {
                         break;
-                    case 4:
-                        this.log.debug(`BpInfoReport (${serialNumber})`);
-                        const bpInfoReport = BpInfoReport.fromBinary(headerMessage.msg.pdata);
-                        this.log.debug(JSON.stringify(bpInfoReport));
+                    }
+                    // BpInfoReport
+                    case 4: {
                         break;
+                    }
                 }
             }
         }
     }
 
     getServices(): Service[] {
-        const services = [this.informationService, this.batteryService, this.outletAcL11, this.outletAcL12, this.outletAcL21, this.outletAcL22];
-        return services;
-    }
-
-
-    newWattCharacteristic(): Characteristic {
-        return new this.api.hap.Characteristic("Watts", "E863F10D-079E-48FF-8F27-9C2605A29F52", {
-            format: Formats.FLOAT,
-            perms: [Perms.NOTIFY, Perms.PAIRED_READ],
-            unit: "W"
-        });
-    }
-
-    newAmpCharacteristic(): Characteristic {
-        return new this.api.hap.Characteristic("Amps", "E863F126-079E-48FF-8F27-9C2605A29F52", {
-            format: Formats.FLOAT,
-            perms: [Perms.NOTIFY, Perms.PAIRED_READ],
-            unit: "A"
-        });
-    }
-
-    newVoltCharacteristic(): Characteristic {
-        return new this.api.hap.Characteristic("Volts", "E863F10A-079E-48FF-8F27-9C2605A29F52", {
-            format: Formats.FLOAT,
-            perms: [Perms.NOTIFY, Perms.PAIRED_READ],
-            unit: "V"
-        });
+        return [this.informationService, this.batteryService, this.outletAcL11, this.outletAcL12, this.outletAcL21, this.outletAcL22, this.outletAcTt, this.outletAcL14];
     }
 }
 
