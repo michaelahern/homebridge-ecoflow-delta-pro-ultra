@@ -3,5 +3,5 @@ import { API } from "homebridge";
 import { EcoflowPlugin } from "./plugin";
 
 export = (api: API) => {
-  api.registerAccessory("EcoFlowDeltaProUltra", EcoflowPlugin);
+  api.registerAccessory("EcoFlow DELTA Pro Ultra", EcoflowPlugin);
 };

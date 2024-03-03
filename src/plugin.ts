@@ -1,4 +1,4 @@
-import { AccessoryConfig, AccessoryPlugin, API, Logging, Service } from "homebridge";
+import { AccessoryConfig, AccessoryPlugin, API, HAP, Logging, Service } from "homebridge";
 
 import { EcoflowApi } from "./api";
 import { EcoFlowCustomCharacteristics } from "./homebridge";
@@ -8,6 +8,7 @@ import { HeaderMessage } from "./proto/HeaderMessage";
 
 export class EcoflowPlugin implements AccessoryPlugin {
     private readonly api: API;
+    private readonly hap: HAP;
     private readonly log: Logging;
     private readonly customCharacteristics: EcoFlowCustomCharacteristics;
 
@@ -21,7 +22,8 @@ export class EcoflowPlugin implements AccessoryPlugin {
     private readonly outletAcL14: Service;
 
     constructor(log: Logging, config: EcoflowPluginConfig, api: API) {
-        this.api = api;    
+        this.api = api;
+        this.hap = api.hap;
         this.log = log;
         this.customCharacteristics = new EcoFlowCustomCharacteristics(api);
 
@@ -42,69 +44,69 @@ export class EcoflowPlugin implements AccessoryPlugin {
         }
 
         // Accessory Information Service
-        this.informationService = new api.hap.Service.AccessoryInformation()
-            .setCharacteristic(api.hap.Characteristic.Manufacturer, "EcoFlow")
-            .setCharacteristic(api.hap.Characteristic.Model, "DELTA Pro Ultra")
-            .setCharacteristic(api.hap.Characteristic.SerialNumber, config.serialNumber ?? "Unknown");
+        this.informationService = new this.hap.Service.AccessoryInformation()
+            .setCharacteristic(this.hap.Characteristic.Manufacturer, "EcoFlow")
+            .setCharacteristic(this.hap.Characteristic.Model, "DELTA Pro Ultra")
+            .setCharacteristic(this.hap.Characteristic.SerialNumber, config.serialNumber ?? "Unknown");
 
         // Battery Service
-        this.batteryService = new api.hap.Service.Battery("Battery");
+        this.batteryService = new this.hap.Service.Battery("Battery");
 
         // Outlet Services
         // AC 20A Backup UPS 1/2 | AC 20A Online UPS 1/2 | AC 120V 30A | AC 120V/240V 30A | Power In/Out
 
         // AC 20A Backup UPS 1
-        this.outletAcL11 = new api.hap.Service.Outlet("AC 20A (Backup UPS 1)", "outletAcL11");
+        this.outletAcL11 = new this.hap.Service.Outlet("AC 20A (Backup UPS 1)", "outletAcL11");
         this.outletAcL11.addCharacteristic(this.customCharacteristics.Amps());
         this.outletAcL11.addCharacteristic(this.customCharacteristics.Volts());
         this.outletAcL11.addCharacteristic(this.customCharacteristics.Watts());
-        this.outletAcL11.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
-            throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
+        this.outletAcL11.getCharacteristic(this.hap.Characteristic.On).onSet(() => { 
+            throw new this.hap.HapStatusError(this.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
         
         // AC 20A Backup UPS 2
-        this.outletAcL12 = new api.hap.Service.Outlet("AC 20A (Backup UPS 2)", "outletAcL12");
+        this.outletAcL12 = new this.hap.Service.Outlet("AC 20A (Backup UPS 2)", "outletAcL12");
         this.outletAcL12.addCharacteristic(this.customCharacteristics.Amps());
         this.outletAcL12.addCharacteristic(this.customCharacteristics.Volts());
         this.outletAcL12.addCharacteristic(this.customCharacteristics.Watts());
-        this.outletAcL12.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
-            throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
+        this.outletAcL12.getCharacteristic(this.hap.Characteristic.On).onSet(() => { 
+            throw new this.hap.HapStatusError(this.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
 
         // AC 20A Online UPS 1
-        this.outletAcL21 = new api.hap.Service.Outlet("AC 20A (Online UPS 1)", "outletAcL21");
+        this.outletAcL21 = new this.hap.Service.Outlet("AC 20A (Online UPS 1)", "outletAcL21");
         this.outletAcL21.addCharacteristic(this.customCharacteristics.Amps());
         this.outletAcL21.addCharacteristic(this.customCharacteristics.Volts());
         this.outletAcL21.addCharacteristic(this.customCharacteristics.Watts());
-        this.outletAcL21.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
-            throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
+        this.outletAcL21.getCharacteristic(this.hap.Characteristic.On).onSet(() => { 
+            throw new this.hap.HapStatusError(this.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
         
         // AC 20A Online UPS 2
-        this.outletAcL22 = new api.hap.Service.Outlet("AC 20A (Online UPS 2)", "outletAcL22");
+        this.outletAcL22 = new this.hap.Service.Outlet("AC 20A (Online UPS 2)", "outletAcL22");
         this.outletAcL22.addCharacteristic(this.customCharacteristics.Amps());
         this.outletAcL22.addCharacteristic(this.customCharacteristics.Volts());
         this.outletAcL22.addCharacteristic(this.customCharacteristics.Watts());
-        this.outletAcL22.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
-            throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
+        this.outletAcL22.getCharacteristic(this.hap.Characteristic.On).onSet(() => { 
+            throw new this.hap.HapStatusError(this.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
 
         // AC 30A 120V
-        this.outletAcTt = new api.hap.Service.Outlet("AC 30A 120V", "outletAcTt");
+        this.outletAcTt = new this.hap.Service.Outlet("AC 30A 120V", "outletAcTt");
         this.outletAcTt.addCharacteristic(this.customCharacteristics.Amps());
         this.outletAcTt.addCharacteristic(this.customCharacteristics.Volts());
         this.outletAcTt.addCharacteristic(this.customCharacteristics.Watts());
-        this.outletAcTt.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
-            throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
+        this.outletAcTt.getCharacteristic(this.hap.Characteristic.On).onSet(() => { 
+            throw new this.hap.HapStatusError(this.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
 
         // AC 30A 120V/240V
-        this.outletAcL14 = new api.hap.Service.Outlet("AC 30A 240V", "outletAcL14");
+        this.outletAcL14 = new this.hap.Service.Outlet("AC 30A 240V", "outletAcL14");
         this.outletAcL14.addCharacteristic(this.customCharacteristics.Amps());
         this.outletAcL14.addCharacteristic(this.customCharacteristics.Volts());
         this.outletAcL14.addCharacteristic(this.customCharacteristics.Watts());
-        this.outletAcL14.getCharacteristic(api.hap.Characteristic.On).onSet(() => { 
-            throw new api.hap.HapStatusError(api.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
+        this.outletAcL14.getCharacteristic(this.hap.Characteristic.On).onSet(() => { 
+            throw new this.hap.HapStatusError(this.hap.HAPStatus.READ_ONLY_CHARACTERISTIC);
         });
 
         if (config.email && config.password && config.serialNumber) {
@@ -152,58 +154,58 @@ export class EcoflowPlugin implements AccessoryPlugin {
 
                         if (appShowHeartbeatReport.soc) {
                             this.log.debug(`soc: ${appShowHeartbeatReport.soc}`)
-                            this.batteryService.getCharacteristic(this.api.hap.Characteristic.BatteryLevel).updateValue(appShowHeartbeatReport.soc);
-                            this.batteryService.getCharacteristic(this.api.hap.Characteristic.StatusLowBattery).updateValue(
+                            this.batteryService.getCharacteristic(this.hap.Characteristic.BatteryLevel).updateValue(appShowHeartbeatReport.soc);
+                            this.batteryService.getCharacteristic(this.hap.Characteristic.StatusLowBattery).updateValue(
                                 appShowHeartbeatReport.soc > 10
-                                    ? this.api.hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL
-                                    : this.api.hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
+                                    ? this.hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL
+                                    : this.hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
                             );
                         }
 
                         // showFlag: 2 == DC, 4 == AC
                         if (appShowHeartbeatReport.showFlag != undefined) {
                             this.log.debug(`showFlag: ${appShowHeartbeatReport.showFlag}`);
-                            this.outletAcL11.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
-                            this.outletAcL12.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
-                            this.outletAcL21.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
-                            this.outletAcL22.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
-                            this.outletAcTt.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
-                            this.outletAcL14.getCharacteristic(this.api.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
+                            this.outletAcL11.getCharacteristic(this.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
+                            this.outletAcL12.getCharacteristic(this.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
+                            this.outletAcL21.getCharacteristic(this.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
+                            this.outletAcL22.getCharacteristic(this.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
+                            this.outletAcTt.getCharacteristic(this.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
+                            this.outletAcL14.getCharacteristic(this.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
                         }
 
                         if (appShowHeartbeatReport.outAcL11Pwr != undefined) {
                             this.log.debug(`outAcL11Pwr: ${appShowHeartbeatReport.outAcL11Pwr}`);
-                            this.outletAcL11.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL11Pwr != 0);
+                            this.outletAcL11.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL11Pwr != 0);
                             this.outletAcL11.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL11Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL12Pwr != undefined) {
                             this.log.debug(`outAcL12Pwr: ${appShowHeartbeatReport.outAcL12Pwr}`);
-                            this.outletAcL12.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL12Pwr != 0);
+                            this.outletAcL12.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL12Pwr != 0);
                             this.outletAcL12.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL12Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL21Pwr != undefined) {
                             this.log.debug(`outAcL21Pwr: ${appShowHeartbeatReport.outAcL11Pwr}`);
-                            this.outletAcL21.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL21Pwr != 0);
+                            this.outletAcL21.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL21Pwr != 0);
                             this.outletAcL21.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL21Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL22Pwr != undefined) {
                             this.log.debug(`outAcL22Pwr: ${appShowHeartbeatReport.outAcL12Pwr}`);
-                            this.outletAcL22.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL22Pwr != 0);
+                            this.outletAcL22.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL22Pwr != 0);
                             this.outletAcL22.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL22Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcTtPwr != undefined) {
                             this.log.debug(`outAcTtPwr: ${appShowHeartbeatReport.outAcTtPwr}`);
-                            this.outletAcTt.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcTtPwr != 0);
+                            this.outletAcTt.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcTtPwr != 0);
                             this.outletAcTt.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcTtPwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL14Pwr != undefined) {
                             this.log.debug(`outAcTtPwr: ${appShowHeartbeatReport.outAcTtPwr}`);
-                            this.outletAcL14.getCharacteristic(this.api.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL14Pwr != 0);
+                            this.outletAcL14.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL14Pwr != 0);
                             this.outletAcL14.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL14Pwr);
                         }
 
@@ -217,10 +219,10 @@ export class EcoflowPlugin implements AccessoryPlugin {
 
                         if (backendRecordHeartbeatReport.bmsInputWatts != undefined) {
                             this.log.debug(`bmsInputWatts: ${backendRecordHeartbeatReport.bmsInputWatts}`)
-                            this.batteryService.getCharacteristic(this.api.hap.Characteristic.ChargingState).updateValue(
+                            this.batteryService.getCharacteristic(this.hap.Characteristic.ChargingState).updateValue(
                                 backendRecordHeartbeatReport.bmsInputWatts == 0
-                                    ? this.api.hap.Characteristic.ChargingState.NOT_CHARGING
-                                    : this.api.hap.Characteristic.ChargingState.CHARGING);
+                                    ? this.hap.Characteristic.ChargingState.NOT_CHARGING
+                                    : this.hap.Characteristic.ChargingState.CHARGING);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL11Amp != undefined) {

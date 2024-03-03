@@ -1,0 +1,66 @@
+{
+    "pluginAlias": "EcoFlow DELTA Pro Ultra",
+    "pluginType": "accessory",
+    "schema": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "string",
+                "required": true,
+                "default": "EcoFlow DELTA Pro Ultra"
+            },
+            "email": {
+                "title": "E-mail",
+                "type": "string",
+                "required": true
+            },
+            "password": {
+                "title": "Password",
+                "type": "string",
+                "required": true
+            },
+            "serialNumber": {
+                "title": "Serial Number",
+                "type": "string",
+                "required": true
+            },
+            "debug": {
+                "title": "Debug Logging",
+                "type": "boolean",
+                "required": false
+            }
+        }
+    },
+    "layout": [
+        {
+            "type": "section",
+            "title": "General Settings",
+            "expandable": true,
+            "expanded": true,
+            "items": [
+                {
+                    "items": [
+                        "name",
+                        "email",
+                        "password",
+                        "serialNumber"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "title": "Advanced Settings (Optional)",
+            "expandable": true,
+            "expanded": false,
+            "items": [
+                {
+                    "items": [
+                        "debug"
+                    ]
+                }
+            ]
+        }
+    ]
+}
