@@ -2,14 +2,19 @@ import { AccessoryConfig, AccessoryPlugin, API, HAP, Logging, Service } from "ho
 
 import { EcoflowApi } from "./api";
 import { EcoFlowCustomCharacteristics } from "./homebridge";
+import { AppParaHeartbeatReport } from "./proto/AppParaHeartbeatReport";
 import { AppShowHeartbeatReport } from "./proto/AppShowHeartbeatReport";
 import { BackendRecordHeartbeatReport } from "./proto/BackendRecordHeartbeatReport";
+import { BpInfoReport } from "./proto/BpInfoReport";
 import { HeaderMessage } from "./proto/HeaderMessage";
 
-export class EcoflowPlugin implements AccessoryPlugin {
+export class EcoFlowPlugin implements AccessoryPlugin {
     private readonly hap: HAP;
     private readonly log: Logging;
+
+    private readonly config: EcoFlowPluginConfig
     private readonly customCharacteristics: EcoFlowCustomCharacteristics;
+    private mqttInitComplete: boolean;
 
     private readonly informationService: Service;
     private readonly batteryService: Service;
@@ -21,10 +26,9 @@ export class EcoflowPlugin implements AccessoryPlugin {
     private readonly outletAcL14: Service;
     private readonly outletAc5P8: Service;
 
-    constructor(log: Logging, config: EcoflowPluginConfig, api: API) {
+    constructor(log: Logging, config: EcoFlowPluginConfig, api: API) {
         this.hap = api.hap;
         this.log = log;
-        this.customCharacteristics = new EcoFlowCustomCharacteristics(api);
 
         if (!config.email) {
             this.log.error("Missing required config value: email");
@@ -41,6 +45,10 @@ export class EcoflowPlugin implements AccessoryPlugin {
         if (!config.debug) {
             config.debug = false;
         }
+
+        this.config = config;
+        this.customCharacteristics = new EcoFlowCustomCharacteristics(api);
+        this.mqttInitComplete = false;
 
         // Accessory Information Service
         this.informationService = new this.hap.Service.AccessoryInformation()
@@ -126,6 +134,12 @@ export class EcoflowPlugin implements AccessoryPlugin {
             setTimeout(async () => {
                 await this.mqttInit(email, password, serialNumber);
             }, 1000);
+
+            setInterval(async () => {
+                if (!this.mqttInitComplete) {
+                    await this.mqttInit(email, password, serialNumber);
+                }
+            }, 5 * 60 * 1000);
         }
     }
 
@@ -135,19 +149,23 @@ export class EcoflowPlugin implements AccessoryPlugin {
     }
 
     private async mqttInit(email: string, password: string, serialNumber: string) {
-        const ecoflowApi = new EcoflowApi();
+        try {
+            const ecoflowApi = new EcoflowApi();
+            const ecoflowMqtt = await ecoflowApi.connectMqttAsync(email, password);
+            await ecoflowMqtt.subscribeAsync(`/app/device/property/${serialNumber}`);
+            ecoflowMqtt.on("message", (topic, message) => this.onMqttMessage(topic, message));
 
-        // todo: retry
-        const ecoflowMqtt = await ecoflowApi.connectMqttAsync(email, password);
-        this.log.info("Connected to Ecoflow MQTT...");
-    
-        await ecoflowMqtt.subscribeAsync(`/app/device/property/${serialNumber}`);
-        this.log.info(`Subscribed to Ecoflow MQTT Topic '/app/device/property/${serialNumber}'...`);
-    
-        ecoflowMqtt.on("message", (topic, message) => this.mqttMessage(topic, message));
+            this.mqttInitComplete = true;
+            this.log.info("Connected to the EcoFlow MQTT Service...");
+        }
+        catch (err) {
+            if (err instanceof Error) {
+                this.log.error(err.message);
+            }
+        }
     }
 
-    private mqttMessage(topic: string, message: Buffer) {
+    private onMqttMessage(topic: string, message: Buffer) {
         const serialNumber = topic.substring(21);
         const headerMessage = HeaderMessage.fromBinary(message);
 
@@ -164,10 +182,12 @@ export class EcoflowPlugin implements AccessoryPlugin {
                     // AppShowHeartbeatReport
                     case 1: {
                         const appShowHeartbeatReport = AppShowHeartbeatReport.fromBinary(headerMessage.msg.pdata);
-                        this.log.debug(`AppShowHeartbeatReport (${serialNumber}) ${JSON.stringify(appShowHeartbeatReport)}`);
+
+                        if (this.config.debug) {
+                            this.log.debug(`AppShowHeartbeatReport (${serialNumber}) ${JSON.stringify(appShowHeartbeatReport)}`);
+                        }
 
                         if (appShowHeartbeatReport.soc) {
-                            this.log.debug(`soc: ${appShowHeartbeatReport.soc}`)
                             this.batteryService.getCharacteristic(this.hap.Characteristic.BatteryLevel).updateValue(appShowHeartbeatReport.soc);
                             this.batteryService.getCharacteristic(this.hap.Characteristic.StatusLowBattery).updateValue(
                                 appShowHeartbeatReport.soc > 10
@@ -176,10 +196,7 @@ export class EcoflowPlugin implements AccessoryPlugin {
                             );
                         }
 
-                        // showFlag: 2 == DC, 4 == AC
-                        // todo: showFlag enum
                         if (appShowHeartbeatReport.showFlag != undefined) {
-                            this.log.debug(`showFlag: ${appShowHeartbeatReport.showFlag}`);
                             this.outletAcL11.getCharacteristic(this.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
                             this.outletAcL12.getCharacteristic(this.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
                             this.outletAcL21.getCharacteristic(this.hap.Characteristic.On).updateValue((appShowHeartbeatReport.showFlag & 4) == 4);
@@ -189,43 +206,36 @@ export class EcoflowPlugin implements AccessoryPlugin {
                         }
                         
                         if (appShowHeartbeatReport.outAcL11Pwr != undefined) {
-                            this.log.debug(`outAcL11Pwr: ${appShowHeartbeatReport.outAcL11Pwr}`);
                             this.outletAcL11.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL11Pwr != 0);
                             this.outletAcL11.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL11Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL12Pwr != undefined) {
-                            this.log.debug(`outAcL12Pwr: ${appShowHeartbeatReport.outAcL12Pwr}`);
                             this.outletAcL12.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL12Pwr != 0);
                             this.outletAcL12.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL12Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL21Pwr != undefined) {
-                            this.log.debug(`outAcL21Pwr: ${appShowHeartbeatReport.outAcL21Pwr}`);
                             this.outletAcL21.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL21Pwr != 0);
                             this.outletAcL21.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL21Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL22Pwr != undefined) {
-                            this.log.debug(`outAcL22Pwr: ${appShowHeartbeatReport.outAcL22Pwr}`);
                             this.outletAcL22.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL22Pwr != 0);
                             this.outletAcL22.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL22Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAcTtPwr != undefined) {
-                            this.log.debug(`outAcTtPwr: ${appShowHeartbeatReport.outAcTtPwr}`);
                             this.outletAcTt.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcTtPwr != 0);
                             this.outletAcTt.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcTtPwr);
                         }
 
                         if (appShowHeartbeatReport.outAcL14Pwr != undefined) {
-                            this.log.debug(`outAcL14Pwr: ${appShowHeartbeatReport.outAcL14Pwr}`);
                             this.outletAcL14.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAcL14Pwr != 0);
                             this.outletAcL14.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAcL14Pwr);
                         }
 
                         if (appShowHeartbeatReport.outAc5P8Pwr != undefined) {
-                            this.log.debug(`outAc5P8Pwr: ${appShowHeartbeatReport.outAc5P8Pwr}`);
                             this.outletAc5P8.getCharacteristic(this.hap.Characteristic.OutletInUse).updateValue(appShowHeartbeatReport.outAc5P8Pwr != 0);
                             this.outletAc5P8.getCharacteristic(EcoFlowCustomCharacteristics.WATTS_NAME)?.updateValue(appShowHeartbeatReport.outAc5P8Pwr);
                         }
@@ -236,10 +246,12 @@ export class EcoflowPlugin implements AccessoryPlugin {
                     // BackendRecordHeartbeatReport
                     case 2: {
                         const backendRecordHeartbeatReport = BackendRecordHeartbeatReport.fromBinary(headerMessage.msg.pdata);
-                        this.log.debug(`BackendRecordHeartbeatReport (${serialNumber}) ${JSON.stringify(backendRecordHeartbeatReport)}`);
+
+                        if (this.config.debug) {
+                            this.log.debug(`BackendRecordHeartbeatReport (${serialNumber}) ${JSON.stringify(backendRecordHeartbeatReport)}`);
+                        }
 
                         if (backendRecordHeartbeatReport.bmsInputWatts != undefined) {
-                            this.log.debug(`bmsInputWatts: ${backendRecordHeartbeatReport.bmsInputWatts}`)
                             this.batteryService.getCharacteristic(this.hap.Characteristic.ChargingState).updateValue(
                                 backendRecordHeartbeatReport.bmsInputWatts == 0
                                     ? this.hap.Characteristic.ChargingState.NOT_CHARGING
@@ -247,72 +259,58 @@ export class EcoflowPlugin implements AccessoryPlugin {
                         }
 
                         if (backendRecordHeartbeatReport.outAcL11Amp != undefined) {
-                            this.log.debug(`outAcL11Amp: ${backendRecordHeartbeatReport.outAcL11Amp}`);
                             this.outletAcL11.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL11Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL11Vol != undefined) {
-                            this.log.debug(`outAcL11Vol: ${backendRecordHeartbeatReport.outAcL11Vol}`);
                             this.outletAcL11.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL11Vol);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL12Amp != undefined) {
-                            this.log.debug(`outAcL12Amp: ${backendRecordHeartbeatReport.outAcL12Amp}`);
                             this.outletAcL12.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL12Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL12Vol != undefined) {
-                            this.log.debug(`outAcL12Vol: ${backendRecordHeartbeatReport.outAcL12Vol}`);
                             this.outletAcL12.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL12Vol);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL21Amp != undefined) {
-                            this.log.debug(`outAcL21Amp: ${backendRecordHeartbeatReport.outAcL21Amp}`);
                             this.outletAcL21.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL21Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL21Vol != undefined) {
-                            this.log.debug(`outAcL21Vol: ${backendRecordHeartbeatReport.outAcL21Vol}`);
                             this.outletAcL21.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL21Vol);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL22Amp != undefined) {
-                            this.log.debug(`outAcL22Amp: ${backendRecordHeartbeatReport.outAcL22Amp}`);
                             this.outletAcL22.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL22Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL22Vol != undefined) {
-                            this.log.debug(`outAcL22Vol: ${backendRecordHeartbeatReport.outAcL22Vol}`);
                             this.outletAcL22.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL22Vol);
                         }
 
                         if (backendRecordHeartbeatReport.outAcTtAmp != undefined) {
-                            this.log.debug(`outAcTtAmp: ${backendRecordHeartbeatReport.outAcTtAmp}`);
                             this.outletAcTt.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcTtAmp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcTtVol != undefined) {
-                            this.log.debug(`outAcTtVol: ${backendRecordHeartbeatReport.outAcTtVol}`);
                             this.outletAcTt.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcTtVol);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL14Amp != undefined) {
-                            this.log.debug(`outAcL14Amp: ${backendRecordHeartbeatReport.outAcL14Amp}`);
                             this.outletAcL14.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL14Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAcL14Vol != undefined) {
-                            this.log.debug(`outAcL14Vol: ${backendRecordHeartbeatReport.outAcL14Vol}`);
                             this.outletAcL14.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAcL14Vol);
                         }
 
                         if (backendRecordHeartbeatReport.outAc5P8Amp != undefined) {
-                            this.log.debug(`outAc5P8Amp: ${backendRecordHeartbeatReport.outAc5P8Amp}`);
                             this.outletAc5P8.getCharacteristic(EcoFlowCustomCharacteristics.AMPS_NAME)?.updateValue(backendRecordHeartbeatReport.outAc5P8Amp);
                         }
 
                         if (backendRecordHeartbeatReport.outAc5P8Vol != undefined) {
-                            this.log.debug(`outAc5P8Vol: ${backendRecordHeartbeatReport.outAc5P8Vol}`);
                             this.outletAc5P8.getCharacteristic(EcoFlowCustomCharacteristics.VOLTS_NAME)?.updateValue(backendRecordHeartbeatReport.outAc5P8Vol);
                         }
 
@@ -321,11 +319,23 @@ export class EcoflowPlugin implements AccessoryPlugin {
 
                     // AppParaHeartbeatReport
                     case 3: {
+                        const appParaHeartbeatReport = AppParaHeartbeatReport.fromBinary(headerMessage.msg.pdata);
+
+                        if (this.config.debug) {
+                            this.log.debug(`AppParaHeartbeatReport (${serialNumber}) ${JSON.stringify(appParaHeartbeatReport)}`);
+                        }
+
                         break;
                     }
 
                     // BpInfoReport
                     case 4: {
+                        const bpInfoReport = BpInfoReport.fromBinary(headerMessage.msg.pdata);
+                        
+                        if (this.config.debug) {
+                            this.log.debug(`BpInfoReport (${serialNumber}) ${JSON.stringify(bpInfoReport)}`);
+                        }
+
                         break;
                     }
                 }
@@ -334,7 +344,7 @@ export class EcoflowPlugin implements AccessoryPlugin {
     }
 }
 
-interface EcoflowPluginConfig extends AccessoryConfig {
+interface EcoFlowPluginConfig extends AccessoryConfig {
     email?: string;
     password?: string;
     serialNumber?: string;

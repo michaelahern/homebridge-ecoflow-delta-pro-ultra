@@ -18,11 +18,11 @@ export class EcoflowApi {
                 });
             }
             else {
-                throw new Error("Ecoflow MQTT Token Exchange Error: Missing Field 'data'");
+                throw new Error("EcoFlow MQTT Token Exchange Error: Missing Field 'data'");
             }
         }
         else {
-            throw new Error("Ecoflow Login Error: Missing Field 'data'");
+            throw new Error("EcoFlow Login Error: Missing Field 'data'");
         }
     }
 
@@ -44,7 +44,7 @@ export class EcoflowApi {
         const response = await axios.post<EcoflowApiLoginResponse>("https://api.ecoflow.com/auth/login", data, config);
 
         if (response.data.code != 0) {
-            throw new Error(`Ecoflow Login Error ${response.data.code}: ${response.data.message}`);
+            throw new Error(`EcoFlow Login Error ${response.data.code}: ${response.data.message}`);
         }
 
         return response.data;
@@ -61,7 +61,7 @@ export class EcoflowApi {
         const response = await axios.get<EcoflowApiMqttTokenExchangeResponse>("https://api.ecoflow.com/iot-auth/app/certification", config);
 
         if (response.data.code != 0) {
-            throw new Error(`Ecoflow MQTT Token Exchange Error ${response.data.code}: ${response.data.message}`);
+            throw new Error(`EcoFlow MQTT Token Exchange Error ${response.data.code}: ${response.data.message}`);
         }
 
         return response.data;
