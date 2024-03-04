@@ -56,7 +56,7 @@
                 "required": false
             },
             "hideOutletAc5P8": {
-                "title": "Power Input/Output Port",
+                "title": "Hide Power Input/Output Port",
                 "type": "boolean",
                 "required": false
             },
