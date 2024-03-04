@@ -131,7 +131,7 @@ export class EcoflowPlugin implements AccessoryPlugin {
 
     public getServices(): Service[] {
         // todo: per outlet config
-        return [this.informationService, this.batteryService, this.outletAcL11, this.outletAcL12, this.outletAcL21, this.outletAcL22, this.outletAcTt, this.outletAcL14];
+        return [this.informationService, this.batteryService, this.outletAcL11, this.outletAcL12, this.outletAcL21, this.outletAcL22, this.outletAcTt, this.outletAcL14, this.outletAc5P8];
     }
 
     private async mqttInit(email: string, password: string, serialNumber: string) {
