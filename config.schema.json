@@ -25,6 +25,41 @@
                 "type": "string",
                 "required": true
             },
+            "hideOutletAcL11": {
+                "title": "Hide Outlet AC 20A (Backup UPS 1)",
+                "type": "boolean",
+                "required": false
+            },
+            "hideOutletAcL12": {
+                "title": "Hide Outlet AC 20A (Backup UPS 2)",
+                "type": "boolean",
+                "required": false
+            },
+            "hideOutletAcL21": {
+                "title": "Hide Outlet AC 20A (Online UPS 1)",
+                "type": "boolean",
+                "required": false
+            },
+            "hideOutletAcL22": {
+                "title": "Hide Outlet AC 20A (Online UPS 2)",
+                "type": "boolean",
+                "required": false
+            },
+            "hideOutletAcTt": {
+                "title": "Hide Outlet AC 30A 120V",
+                "type": "boolean",
+                "required": false
+            },
+            "hideOutletAcL14": {
+                "title": "Hide Outlet AC 30A 120V/240V",
+                "type": "boolean",
+                "required": false
+            },
+            "hideOutletAc5P8": {
+                "title": "Power Input/Output Port",
+                "type": "boolean",
+                "required": false
+            },
             "debug": {
                 "title": "Debug Logging",
                 "type": "boolean",
@@ -45,6 +80,25 @@
                         "email",
                         "password",
                         "serialNumber"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "title": "Outlet Settings (Optional)",
+            "expandable": true,
+            "expanded": false,
+            "items": [
+                {
+                    "items": [
+                        "hideOutletAcL11",
+                        "hideOutletAcL12",
+                        "hideOutletAcL21",
+                        "hideOutletAcL22",
+                        "hideOutletAcTt",
+                        "hideOutletAcL14",
+                        "hideOutletAc5P8"
                     ]
                 }
             ]

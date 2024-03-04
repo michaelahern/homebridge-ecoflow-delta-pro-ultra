@@ -144,8 +144,37 @@ export class EcoFlowPlugin implements AccessoryPlugin {
     }
 
     public getServices(): Service[] {
-        // todo: per outlet config
-        return [this.informationService, this.batteryService, this.outletAcL11, this.outletAcL12, this.outletAcL21, this.outletAcL22, this.outletAcTt, this.outletAcL14, this.outletAc5P8];
+        const services = [this.informationService, this.batteryService];
+
+        if (!this.config.hideOutletAcL11) {
+            services.push(this.outletAcL11);
+        }
+
+        if (!this.config.hideOutletAcL12) {
+            services.push(this.outletAcL12);
+        }
+
+        if (!this.config.hideOutletAcL21) {
+            services.push(this.outletAcL21);
+        }
+
+        if (!this.config.hideOutletAcL22) {
+            services.push(this.outletAcL22);
+        }
+
+        if (!this.config.hideOutletAcTt) {
+            services.push(this.outletAcTt);
+        }
+
+        if (!this.config.hideOutletAcL14) {
+            services.push(this.outletAcL14);
+        }
+
+        if (!this.config.hideOutletAc5P8) {
+            services.push(this.outletAc5P8);
+        }
+
+        return services;
     }
 
     private async mqttInit(email: string, password: string, serialNumber: string) {
@@ -348,5 +377,12 @@ interface EcoFlowPluginConfig extends AccessoryConfig {
     email?: string;
     password?: string;
     serialNumber?: string;
+    hideOutletAcL11?: boolean;
+    hideOutletAcL12?: boolean;
+    hideOutletAcL21?: boolean;
+    hideOutletAcL22?: boolean;
+    hideOutletAcTt?: boolean;
+    hideOutletAcL14?: boolean;
+    hideOutletAc5P8?: boolean;
     debug?: boolean;
 }
