@@ -53,3 +53,10 @@ Field               | Description
 **hideOutletAcL14** | (optional) Hide Outlet AC 30A 120V/240V
 **hideOutletAc5P8** | (optional) Hide Power Input/Output Port
 **debug**           | (optional) Enable debug logging, disabled by default
+
+## Notes
+
+ * This plugin is still experimental!
+ * Only Battery and AC Outlet services are supported for read-only operations at the moment (i.e. there's no ability to turn AC Outlets on/off).
+ * AC Outlet real-time electrical data (e.g. Voltage, Amps, Watts) are not visible in the Apple Home app, but are visible within some third-party HomeKit apps, including [Eve](https://www.evehome.com/en-us/eve-app) and [Home+](https://hochgatterer.me/home+/).
+ 
