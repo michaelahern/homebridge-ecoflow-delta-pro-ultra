@@ -47,6 +47,7 @@
     "uuid": "~10.0"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin": "^2",
     "@types/node": "^20",
     "@types/uuid": "~10.0",
     "eslint": "^9",
