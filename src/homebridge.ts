@@ -1,4 +1,3 @@
-
 import { API, Characteristic, Formats, Perms } from 'homebridge';
 
 export class EcoFlowCustomCharacteristics {

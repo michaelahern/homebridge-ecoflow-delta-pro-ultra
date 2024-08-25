@@ -1,12 +1,12 @@
 import { AccessoryConfig, AccessoryPlugin, API, HAP, Logging, Service } from "homebridge";
 
-import { EcoflowApi } from "./api";
-import { EcoFlowCustomCharacteristics } from "./homebridge";
-import { AppParaHeartbeatReport } from "./proto/AppParaHeartbeatReport";
-import { AppShowHeartbeatReport } from "./proto/AppShowHeartbeatReport";
-import { BackendRecordHeartbeatReport } from "./proto/BackendRecordHeartbeatReport";
-import { BpInfoReport } from "./proto/BpInfoReport";
-import { HeaderMessage } from "./proto/HeaderMessage";
+import { EcoflowApi } from "./api.js";
+import { EcoFlowCustomCharacteristics } from "./homebridge.js";
+import { AppParaHeartbeatReport } from "./proto/AppParaHeartbeatReport.js";
+import { AppShowHeartbeatReport } from "./proto/AppShowHeartbeatReport.js";
+import { BackendRecordHeartbeatReport } from "./proto/BackendRecordHeartbeatReport.js";
+import { BpInfoReport } from "./proto/BpInfoReport.js";
+import { HeaderMessage } from "./proto/HeaderMessage.js";
 
 export class EcoFlowPlugin implements AccessoryPlugin {
     private readonly hap: HAP;
